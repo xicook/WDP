@@ -9,12 +9,15 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import com.bumptech.glide.Glide
 
-class EasyWdlRenderer(private val context: Context, private val container: LinearLayout) {
+class EasyWdlRenderer(
+    private val context: Context, 
+    private val container: LinearLayout,
+    private val onNavigate: (String) -> Unit
+) {
 
     fun render(content: String) {
         container.removeAllViews()
         
-        // Simple tokenization for EasyWDL
         val tagRegex = "\\(.*?\\)".toRegex()
         val tags = tagRegex.findAll(content).toList()
         val plainTexts = content.split(tagRegex)
@@ -26,16 +29,23 @@ class EasyWdlRenderer(private val context: Context, private val container: Linea
         }
 
         var currentTag: String? = null
+        var currentLinkUrl: String? = null
         
         for (token in combined) {
             if (token.startsWith("(") && token.endsWith(")")) {
-                val tagName = token.substring(1, token.length - 1).lowercase().split(":")[0]
+                val tagContent = token.substring(1, token.length - 1)
+                val tagName = tagContent.lowercase().split(":")[0]
                 
                 if (tagName == currentTag) {
                     currentTag = null
+                    currentLinkUrl = null
                     continue
                 }
+                
                 currentTag = tagName
+                if (tagName == "link" && tagContent.contains(":")) {
+                    currentLinkUrl = tagContent.substringAfter(":")
+                }
             } else {
                 val text = token.trim()
                 if (text.isEmpty()) continue
@@ -45,14 +55,14 @@ class EasyWdlRenderer(private val context: Context, private val container: Linea
                     "text" -> addTextView(text, 16f, false, false)
                     "center" -> addTextView(text, 16f, false, true)
                     "image" -> addImageView(text)
-                    "link" -> addTextView(text, 16f, true, false, Color.BLUE)
+                    "link" -> addTextView(text, 16f, true, false, Color.BLUE, currentLinkUrl)
                     else -> addTextView(text, 16f, false, false)
                 }
             }
         }
     }
 
-    private fun addTextView(text: String, size: Float, bold: Boolean, center: Boolean, color: Int = Color.BLACK) {
+    private fun addTextView(text: String, size: Float, bold: Boolean, center: Boolean, color: Int = Color.BLACK, linkUrl: String? = null) {
         val tv = TextView(context).apply {
             this.text = text
             this.textSize = size
@@ -60,6 +70,11 @@ class EasyWdlRenderer(private val context: Context, private val container: Linea
             if (bold) setTypeface(null, Typeface.BOLD)
             if (center) gravity = Gravity.CENTER_HORIZONTAL
             setPadding(0, 12, 0, 12)
+            
+            if (linkUrl != null) {
+                setOnClickListener { onNavigate(linkUrl) }
+                setBackgroundResource(android.R.drawable.list_selector_background)
+            }
         }
         container.addView(tv)
     }

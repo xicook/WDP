@@ -15,17 +15,24 @@ class WdpClient {
                 val cleanUrl = if (url.contains("://")) url.substringAfter("://") else url
                 val hostPort = cleanUrl.split("/", "?").first()
                 
-                var host = hostPort
-                var port = if (isSecure) 7071 else 7070
-                
-                if (hostPort.contains(":")) {
-                    val hp = hostPort.split(":")
-                    host = hp[0]
-                    port = hp[1].toInt()
+                var resolvedHost: String
+                var resolvedPort: Int
+
+                // Official WDP Network Hardcoded Resolution
+                val resolution = when (hostPort) {
+                    "home", "x1co.com.br" -> "46.225.97.140:7070"
+                    "search.me", "register.me", "portal.me" -> "46.225.97.140:5555"
+                    else -> hostPort
                 }
 
-                // Simplified Registry for Android
-                if (host == "home") host = "46.225.97.140"
+                if (resolution.contains(":")) {
+                    val hp = resolution.split(":")
+                    resolvedHost = hp[0]
+                    resolvedPort = hp[1].toInt()
+                } else {
+                    resolvedHost = resolution
+                    resolvedPort = if (isSecure) 7071 else 7070
+                }
 
                 val socket = if (isSecure) {
                     val sc = SSLContext.getInstance("TLS")
@@ -34,20 +41,22 @@ class WdpClient {
                         override fun checkServerTrusted(p0: Array<out X509Certificate>?, p1: String?) {}
                         override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
                     }), java.security.SecureRandom())
-                    sc.socketFactory.createSocket(host, port)
+                    sc.socketFactory.createSocket(resolvedHost, resolvedPort)
                 } else {
-                    Socket(host, port)
+                    Socket(resolvedHost, resolvedPort)
                 }
 
                 socket.soTimeout = 7000
                 socket.outputStream.write("WDP $url\r\n".toByteArray())
                 
-                val response = socket.inputStream.bufferedReader().use { it.readText() }
+                // Read response
+                val responseText = socket.inputStream.bufferedReader().use { it.readText() }
                 
-                val body = if (response.contains("\r\n\r\n")) {
-                    response.substringAfter("\r\n\r\n")
+                val body = if (responseText.contains("\r\n\r\n")) {
+                    responseText.substringAfter("\r\n\r\n")
                 } else {
-                    response
+                    val firstNl = responseText.indexOf("\n")
+                    if (firstNl != -1) responseText.substring(firstNl + 1).trim() else responseText
                 }
                 
                 callback(Result.success(body))

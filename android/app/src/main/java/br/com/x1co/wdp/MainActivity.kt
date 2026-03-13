@@ -19,7 +19,10 @@ class MainActivity : AppCompatActivity() {
 
         urlInput = findViewById(R.id.urlInput)
         contentContainer = findViewById(R.id.contentContainer)
-        renderer = EasyWdlRenderer(this, contentContainer)
+        renderer = EasyWdlRenderer(this, contentContainer) { newUrl ->
+            urlInput.setText(newUrl)
+            fetchContent(newUrl)
+        }
 
         findViewById<Button>(R.id.goButton).setOnClickListener {
             val url = urlInput.text.toString().trim()
