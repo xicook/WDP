@@ -38,20 +38,20 @@ class EasyWdlRenderer(
                 val tagContent = token.substring(1, token.length - 1)
                 val tagName = tagContent.lowercase().split(":")[0]
                 
-                if (tagName == currentTag) {
+                if (tagContent.startsWith("/")) {
                     currentTag = null
-                    currentLinkUrl = null
                     continue
                 }
                 
                 when (tagName) {
                     "input" -> {
                         addInput(tagContent.substringAfter(":"))
-                        currentTag = null
                     }
                     "button" -> {
                         addButton(tagContent.substringAfter(":"))
-                        currentTag = null
+                    }
+                    "image" -> {
+                       if (tagContent.contains(":")) addImageView(tagContent.substringAfter(":"))
                     }
                     "link" -> {
                         currentTag = "link"
