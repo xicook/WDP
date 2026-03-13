@@ -44,9 +44,20 @@ class EasyWdlRenderer(
                     continue
                 }
                 
-                currentTag = tagName
-                if (tagName == "link" && tagContent.contains(":")) {
-                    currentLinkUrl = tagContent.substringAfter(":")
+                when (tagName) {
+                    "input" -> {
+                        addInput(tagContent.substringAfter(":"))
+                        currentTag = null
+                    }
+                    "button" -> {
+                        addButton(tagContent.substringAfter(":"))
+                        currentTag = null
+                    }
+                    "link" -> {
+                        currentTag = "link"
+                        currentLinkUrl = if (tagContent.contains(":")) tagContent.substringAfter(":") else null
+                    }
+                    else -> currentTag = tagName
                 }
             } else {
                 val text = token.trim()
