@@ -39,8 +39,9 @@ class WDPBrowser:
 
         self.url_entry = ttk.Entry(self.nav_frame, font=("Segoe UI", 12))
         self.url_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
-        self.url_entry.insert(0, "wdp://x1co.com.br")
+        self.url_entry.insert(0, "wdp://x1co.com.br:5555")
         self.url_entry.bind("<Return>", lambda e: self.navigate())
+        self.inputs = {}
 
         self.go_btn = ttk.Button(self.nav_frame, text="Navigate", command=self.navigate)
         self.go_btn.pack(side=tk.LEFT, padx=5)
@@ -69,6 +70,16 @@ class WDPBrowser:
         self.text_area.tag_bind("link", "<Leave>", lambda e: self.text_area.config(cursor=""))
 
     def resolve_host(self, host):
+        # Official WDP Network Hardcoded Resolution
+        official_domains = {
+            "x1co.com.br": "46.225.97.140",
+            "home": "46.225.97.140",
+            "search.me": "46.225.97.140:5555",
+            "register.me": "46.225.97.140:5555",
+            "portal.me": "46.225.97.140:5555"
+        }
+        if host in official_domains:
+            return official_domains[host]
         return self.registry.get(host, host)
 
     def navigate(self):
@@ -182,9 +193,12 @@ class WDPBrowser:
         else:
             self.text_area.insert(tk.END, body.decode('utf-8', 'ignore'))
 
-    def render_wdl(self, content):
-        # Support for both [tag] (Legacy) and (tag) (EasyWDL)
-        tokens = re.split(r"(\[.*?\]|\(.*?\))", content)
+    def render_wdl(self, wdl_text):
+        self.text_area.delete(1.0, tk.END) # This is what clear_page() would do
+        self.inputs = {}
+        
+        # Tokenize EasyWDL
+        tokens = re.split(r"(\[.*?\]|\(.*?\))", wdl_text)
         current_tag = None
         active_link_url = None
         
@@ -222,13 +236,15 @@ class WDPBrowser:
                     attrs = parts[1] if len(parts) > 1 else ""
 
             if is_tag:
-                # Same-tag closing logic: (text) ... (text)
-                if tag_name == current_tag:
+                if current_tag == tag_name:
                     current_tag = None
+                    active_link_url = None
                     continue
                 
                 current_tag = tag_name
-                
+                if ":" in current_tag:
+                    current_tag = current_tag.split(":")[0]
+
                 # Normalize tags to English
                 if current_tag == "titulo": current_tag = "title"
                 if current_tag == "texto": current_tag = "text"
@@ -253,23 +269,55 @@ class WDPBrowser:
                     current_tag = None
                     continue
 
-                if not current_tag:
-                    # Text outside any tag is treated as normal text
-                    self.text_area.insert(tk.END, token)
-                elif current_tag == "title":
-                    self.text_area.insert(tk.END, token, ("title", "center"))
-                elif current_tag == "text":
-                    self.text_area.insert(tk.END, token, "text")
-                elif current_tag == "link":
-                    start_idx = self.text_area.index(tk.INSERT)
-                    self.text_area.insert(tk.END, token, "link")
-                    end_idx = self.text_area.index(tk.INSERT)
-                    self.links[f"{start_idx}-{end_idx}"] = active_link_url
-                elif current_tag == "center":
-                    self.text_area.insert(tk.END, token, "center")
-                
-                # If it's a block-level tag, ensure we have a newline IF the token had one
-                # or just add it to keep it clean. But let's respect original formatting.
+                text = token
+                if not is_tag:
+                    if current_tag == "title":
+                        self.text_area.insert(tk.END, text + "\n", "title")
+                    elif current_tag == "text":
+                        self.text_area.insert(tk.END, text + "\n", "text")
+                    elif current_tag == "center":
+                        self.text_area.insert(tk.END, text + "\n", "center")
+                    elif current_tag == "image":
+                        self.insert_image(text) # Changed from load_image to insert_image
+                    elif current_tag == "link":
+                        start = self.text_area.index(tk.END)
+                        self.text_area.insert(tk.END, text, "link")
+                        end = self.text_area.index(tk.END)
+                        url = active_link_url if active_link_url else text
+                        self.text_area.tag_add(f"link_{url}", start, end)
+                        self.text_area.tag_bind(f"link_{url}", "<Button-1>", lambda e, u=url: self.fetch_url(u))
+                        self.text_area.insert(tk.END, "\n")
+                    elif current_tag == "input":
+                        # (input:varname:Placeholder)
+                        parts = text.split(":")
+                        varname = parts[0] if len(parts) > 0 else "input"
+                        placeholder = parts[1] if len(parts) > 1 else ""
+                        
+                        entry = ttk.Entry(self.text_area, width=30)
+                        entry.insert(0, placeholder)
+                        self.text_area.window_create(tk.END, window=entry)
+                        self.text_area.insert(tk.END, "\n")
+                        self.inputs[varname] = entry
+                    elif current_tag == "button":
+                        # (button:action_url:Label)
+                        parts = text.split(":")
+                        action_url = parts[0] if len(parts) > 0 else ""
+                        label = parts[1] if len(parts) > 1 else "Submit"
+                        
+                        btn = ttk.Button(self.text_area, text=label, command=lambda u=action_url: self.submit_form(u))
+                        self.text_area.window_create(tk.END, window=btn)
+                        self.text_area.insert(tk.END, "\n")
+                    else:
+                        self.text_area.insert(tk.END, text + "\n")
+
+    def submit_form(self, action_url):
+        params = []
+        for varname, widget in self.inputs.items():
+            params.append(f"{varname}={widget.get()}")
+        
+        query_str = "&".join(params)
+        final_url = f"{action_url}?{query_str}" if "?" not in action_url else f"{action_url}&{query_str}"
+        self.fetch_url(final_url)
 
     def insert_image(self, url):
         try:
