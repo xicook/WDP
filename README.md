@@ -35,9 +35,17 @@ python3 wdp_browser.py
 (link:wdp://home) Go Home (link:wdp://home)
 ```
 
+## The Registry (Fake DNS)
+> [!WARNING]
+> The `wdp_registry.json` file is a **local shortcut registry**. 
+> - It allows you to use friendly names like `wdp://home` instead of `localhost`.
+> - If a name is **not** in this file, the browser will attempt to resolve it using the real internet DNS.
+> - Avoid sharing your private registry file if it contains sensitive internal IPs.
+
 ## Project Structure
-- `wdp_server.py`: The WDP server implementation.
-- `wdp_browser.py`: The GUI browser.
-- `wdp_registry.json`: DNS simulation registry.
+- `wdp_server.py`: The WDP server implementation (supports WDP/1.0 and WDPS).
+- `wdp_browser.py`: The GUI browser with EasyWDL support.
+- `wdp_registry.json`: Local name resolution shortcuts.
 - `www/`: Directory for your WDL and HTML files.
-- `build_app.sh`: Automated build script.
+- `build_app.sh`: Automated build script for Linux/Debian.
+- `generate_certs.sh`: Script to generate SSL/TLS certificates for WDPS.

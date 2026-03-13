@@ -16,3 +16,8 @@ dist/
 
 # System
 .DS_Store
+
+# Certificates
+*.crt
+*.key
+*.pem

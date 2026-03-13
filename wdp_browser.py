@@ -7,6 +7,7 @@ import os
 from PIL import Image, ImageTk
 import io
 import requests
+import ssl
 
 class WDPBrowser:
     def __init__(self, root):
@@ -38,10 +39,10 @@ class WDPBrowser:
 
         self.url_entry = ttk.Entry(self.nav_frame, font=("Segoe UI", 12))
         self.url_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
-        self.url_entry.insert(0, "wdp://portal/index.wdl")
+        self.url_entry.insert(0, "wdp://home/index.wdl")
         self.url_entry.bind("<Return>", lambda e: self.navigate())
 
-        self.go_btn = ttk.Button(self.nav_frame, text="Navegar", command=self.navigate)
+        self.go_btn = ttk.Button(self.nav_frame, text="Navigate", command=self.navigate)
         self.go_btn.pack(side=tk.LEFT, padx=5)
 
         # Content Area
@@ -72,7 +73,7 @@ class WDPBrowser:
 
     def navigate(self):
         url = self.url_entry.get().strip()
-        if not url.startswith("wdp://"):
+        if not (url.startswith("wdp://") or url.startswith("wdps://")):
             url = "wdp://" + url
         self.fetch_url(url)
 
@@ -82,28 +83,51 @@ class WDPBrowser:
         self.image_refs = [] 
         self.links = {}
         
-        self.text_area.insert(tk.END, f"Resolvendo {url}...\n", "center")
+        is_secure = url.startswith("wdps://")
+        
+        self.text_area.insert(tk.END, f"Connecting to {url}...\n", "center")
         self.root.update()
 
         try:
             # Parse URL
-            match = re.match(r"wdp://([^/]+)(.*)", url)
+            match = re.match(r"wdps?://([^/]+)(.*)", url)
             if not match:
-                raise Exception("URL malformada")
+                raise Exception("The URL format is invalid. Try wdp://domain/path")
             
             raw_host, path = match.groups()
-            host = self.resolve_host(raw_host)
             
+            # DNS/Registry Resolution
+            host = self.resolve_host(raw_host)
+
             if ":" in host:
                 host, port = host.split(":")
                 port = int(port)
             else:
-                port = 7070 
+                port = 7071 if is_secure else 7070 
 
             # Connect and Request
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.settimeout(10)
-            s.connect((host, port))
+            try:
+                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                s.settimeout(5) # Shorter timeout for better UX
+                
+                if is_secure:
+                    context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+                    context.check_hostname = False
+                    context.verify_mode = ssl.CERT_NONE
+                    s = context.wrap_socket(s, server_hostname=host)
+
+                s.connect((host, port))
+            except socket.timeout:
+                raise Exception("Connection Timeout: The server took too long to respond. Is it running?")
+            except socket.gaierror:
+                raise Exception("Network Error: Could not resolve address. Are you connected to the internet?")
+            except ConnectionRefusedError:
+                raise Exception(f"Connection Refused: The server at {host}:{port} is not accepting connections.")
+            except ssl.SSLError as se:
+                raise Exception(f"SSL/Security Error: {se.reason if hasattr(se, 'reason') else str(se)}")
+            except Exception as e:
+                raise Exception(f"Connection Failed: {str(e)}")
+
             request = f"WDP {url}\r\n"
             s.sendall(request.encode('utf-8'))
 

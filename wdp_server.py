@@ -2,9 +2,12 @@ import socket
 import threading
 import os
 import mimetypes
+import ssl
 
 PORT = 7070
+SECURE_PORT = 7071
 WWW_DIR = "www"
+CERT_FILE = "server.pem" # Combined crt and key
 
 # Custom MIMETYPE for WDL
 mimetypes.add_type('text/wdl', '.wdl')
@@ -13,15 +16,15 @@ def handle_client(client_socket):
     try:
         data = client_socket.recv(1024).decode('utf-8').strip()
         if not data.startswith("WDP "):
-            print(f"Invalid request: {data}")
             client_socket.close()
             return
 
         # Extract URL or Path
         raw_path = data[4:].strip()
-        if raw_path.startswith("wdp://"):
-            parts = raw_path.replace("wdp://", "").split("/", 1)
-            path = "/" + (parts[1] if len(parts) > 1 else "")
+        if raw_path.startswith("wdp://") or raw_path.startswith("wdps://"):
+            # Remove protocol
+            clean_path = re.sub(r"wdps?://[^/]+", "", raw_path)
+            path = clean_path if clean_path else "/"
         else:
             path = raw_path
 
@@ -54,21 +57,46 @@ def handle_client(client_socket):
     finally:
         client_socket.close()
 
+import re # Needed for path parsing
+
+def start_server(port, secure=False):
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    server.bind(("0.0.0.0", port))
+    server.listen(10)
+    
+    mode = "WDPS (SECURE)" if secure else "WDP"
+    print(f"{mode} Server running on port {port}...")
+
+    if secure:
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        if os.path.exists(CERT_FILE):
+            context.load_cert_chain(certfile=CERT_FILE)
+        else:
+            print("Warning: server.pem not found. Secure mode might fail.")
+    
+    while True:
+        client, addr = server.accept()
+        if secure:
+            try:
+                client = context.wrap_socket(client, server_side=True)
+            except Exception as e:
+                print(f"SSL Handshake Error: {e}")
+                client.close()
+                continue
+        
+        client_handler = threading.Thread(target=handle_client, args=(client,))
+        client_handler.start()
+
 def main():
     if not os.path.exists(WWW_DIR):
         os.makedirs(WWW_DIR)
 
-    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    # Bind to all interfaces to allow remote access
-    server.bind(("0.0.0.0", PORT))
-    server.listen(10)
-    print(f"WDP/1.0 Professional Server running on all interfaces, port {PORT}...")
-
-    while True:
-        client, addr = server.accept()
-        client_handler = threading.Thread(target=handle_client, args=(client,))
-        client_handler.start()
+    # Start normal WDP
+    threading.Thread(target=start_server, args=(PORT, False), daemon=True).start()
+    
+    # Start WDPS
+    start_server(SECURE_PORT, True)
 
 if __name__ == "__main__":
     main()
