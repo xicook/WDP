@@ -14,9 +14,11 @@ class EasyWdlRenderer(
     private val container: LinearLayout,
     private val onNavigate: (String) -> Unit
 ) {
+    private val inputs = mutableMapOf<String, android.widget.EditText>()
 
     fun render(content: String) {
         container.removeAllViews()
+        inputs.clear()
         
         val tagRegex = "\\(.*?\\)".toRegex()
         val tags = tagRegex.findAll(content).toList()
@@ -56,10 +58,56 @@ class EasyWdlRenderer(
                     "center" -> addTextView(text, 16f, false, true)
                     "image" -> addImageView(text)
                     "link" -> addTextView(text, 16f, true, false, Color.BLUE, currentLinkUrl)
+                    "input" -> addInput(text)
+                    "button" -> addButton(text)
                     else -> addTextView(text, 16f, false, false)
                 }
             }
         }
+    }
+
+    private fun addInput(spec: String) {
+        val parts = spec.split(":")
+        val varname = parts[0]
+        val placeholder = if (parts.size > 1) parts[1] else ""
+        
+        val et = android.widget.EditText(context).apply {
+            hint = placeholder
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { setMargins(20, 10, 20, 10) }
+        }
+        inputs[varname] = et
+        container.addView(et)
+    }
+
+    private fun addButton(spec: String) {
+        val parts = spec.split(":")
+        val actionUrl = parts[0]
+        val label = if (parts.size > 1) parts[1] else "Submit"
+        
+        val btn = android.widget.Button(context).apply {
+            text = label
+            setOnClickListener {
+                submitForm(actionUrl)
+            }
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { 
+                gravity = Gravity.CENTER_HORIZONTAL
+                setMargins(0, 20, 0, 20)
+            }
+        }
+        container.addView(btn)
+    }
+
+    private fun submitForm(actionUrl: String) {
+        val params = inputs.map { (k, v) -> "$k=${java.net.URLEncoder.encode(v.text.toString(), "UTF-8")}" }
+        val query = params.joinToString("&")
+        val finalUrl = if (actionUrl.contains("?")) "$actionUrl&$query" else "$actionUrl?$query"
+        onNavigate(finalUrl)
     }
 
     private fun addTextView(text: String, size: Float, bold: Boolean, center: Boolean, color: Int = Color.BLACK, linkUrl: String? = null) {
@@ -73,7 +121,6 @@ class EasyWdlRenderer(
             
             if (linkUrl != null) {
                 setOnClickListener { onNavigate(linkUrl) }
-                setBackgroundResource(android.R.drawable.list_selector_background)
             }
         }
         container.addView(tv)

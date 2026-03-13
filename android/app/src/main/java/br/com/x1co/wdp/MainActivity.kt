@@ -30,13 +30,13 @@ class MainActivity : AppCompatActivity() {
                 fetchContent(url)
             } else {
                 // If URL input is empty, set default and fetch
-                urlInput.setText("wdp://x1co.com.br")
-                fetchContent("wdp://x1co.com.br")
+                urlInput.setText("wdp://x1co.com.br:5555")
+                fetchContent("wdp://x1co.com.br:5555")
             }
         }
         
         // Load default content
-        fetchContent("wdp://x1co.com.br")
+        fetchContent("wdp://x1co.com.br:5555")
     }
 
     private fun fetchContent(url: String) {
