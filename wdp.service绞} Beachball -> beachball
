@@ -1,0 +1,12 @@
+[Unit]
+Description=WDP Main Server
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/python3 /home/x1co/WDP/wdp_server.py
+WorkingDirectory=/home/x1co/WDP
+Restart=always
+User=x1co
+
+[Install]
+WantedBy=multi-user.target

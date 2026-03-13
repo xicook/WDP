@@ -39,7 +39,7 @@ class WDPBrowser:
 
         self.url_entry = ttk.Entry(self.nav_frame, font=("Segoe UI", 12))
         self.url_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
-        self.url_entry.insert(0, "wdp://home/index.wdl")
+        self.url_entry.insert(0, "wdp://x1co.com.br")
         self.url_entry.bind("<Return>", lambda e: self.navigate())
 
         self.go_btn = ttk.Button(self.nav_frame, text="Navigate", command=self.navigate)

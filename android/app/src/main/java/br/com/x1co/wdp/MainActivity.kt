@@ -25,11 +25,15 @@ class MainActivity : AppCompatActivity() {
             val url = urlInput.text.toString().trim()
             if (url.isNotEmpty()) {
                 fetchContent(url)
+            } else {
+                // If URL input is empty, set default and fetch
+                urlInput.setText("wdp://x1co.com.br")
+                fetchContent("wdp://x1co.com.br")
             }
         }
         
         // Load default content
-        fetchContent("wdp://home")
+        fetchContent("wdp://x1co.com.br")
     }
 
     private fun fetchContent(url: String) {
