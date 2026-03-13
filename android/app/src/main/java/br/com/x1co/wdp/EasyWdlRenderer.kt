@@ -67,9 +67,8 @@ class EasyWdlRenderer(
     }
 
     private fun addInput(spec: String) {
-        val parts = spec.split(":")
-        val varname = parts[0]
-        val placeholder = if (parts.size > 1) parts[1] else ""
+        val varname = if (spec.contains(":")) spec.substringBefore(":") else spec
+        val placeholder = if (spec.contains(":")) spec.substringAfter(":") else ""
         
         val et = android.widget.EditText(context).apply {
             hint = placeholder
@@ -83,9 +82,8 @@ class EasyWdlRenderer(
     }
 
     private fun addButton(spec: String) {
-        val parts = spec.split(":")
-        val actionUrl = parts[0]
-        val label = if (parts.size > 1) parts[1] else "Submit"
+        val actionUrl = if (spec.contains(":")) spec.substringBeforeLast(":") else spec
+        val label = if (spec.contains(":")) spec.substringAfterLast(":") else "Submit"
         
         val btn = android.widget.Button(context).apply {
             text = label
