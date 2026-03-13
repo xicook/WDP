@@ -2,5 +2,7 @@
     "home": "localhost",
     "portal": "localhost",
     "search": "127.0.0.1",
-    "news": "127.0.0.1"
+    "news": "127.0.0.1",
+    "search.me": "localhost:5555",
+    "register.me": "localhost:5060"
 }

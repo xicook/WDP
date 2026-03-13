@@ -13,8 +13,7 @@ class WdpClient {
             try {
                 val isSecure = url.startsWith("wdps://")
                 val cleanUrl = if (url.contains("://")) url.substringAfter("://") else url
-                val parts = cleanUrl.split("/", limit = 2)
-                val hostPort = parts[0]
+                val hostPort = cleanUrl.split("/", "?").first()
                 
                 var host = hostPort
                 var port = if (isSecure) 7071 else 7070

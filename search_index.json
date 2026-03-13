@@ -1,0 +1,17 @@
+[
+    {
+        "name": "Register Me!",
+        "url": "wdp://register.me",
+        "description": "Register your site on WDP!"
+    },
+    {
+        "name": "Search Me!",
+        "url": "wdp://search.me",
+        "description": "Global Search Engine for WDP."
+    },
+    {
+        "name": "Local Home",
+        "url": "wdp://home",
+        "description": "The default home page of this WDP installation."
+    }
+]

@@ -89,12 +89,14 @@ class WDPBrowser:
         self.root.update()
 
         try:
-            # Parse URL
-            match = re.match(r"wdps?://([^/]+)(.*)", url)
+            # Parse URL: wdp://host:port/path?query
+            match = re.match(r"(wdps?://)([^/?]+)([^?]*)(\?.*)?", url)
             if not match:
                 raise Exception("The URL format is invalid. Try wdp://domain/path")
             
-            raw_host, path = match.groups()
+            proto, raw_host, path, query = match.groups()
+            path = path or "/"
+            query = query or ""
             
             # DNS/Registry Resolution
             host = self.resolve_host(raw_host)

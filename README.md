@@ -54,7 +54,10 @@ gradle assembleDebug
 ## Project Structure
 - `wdp_server.py`: The WDP server implementation (supports WDP/1.0 and WDPS).
 - `wdp_browser.py`: The GUI browser with EasyWDL support.
+- `wdp_search_server.py`: The Search and Registration engine (Ports 5555 and 5060).
+- `search_index.json`: Global site index database.
 - `wdp_registry.json`: Local name resolution shortcuts.
 - `www/`: Directory for your WDL and HTML files.
+- `android/`: Native Android application project.
 - `build_app.sh`: Automated build script for Linux/Debian.
 - `generate_certs.sh`: Script to generate SSL/TLS certificates for WDPS.
