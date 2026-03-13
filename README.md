@@ -3,11 +3,13 @@
 WDP is a simplified, lightweight alternative to HTTP, designed for speed and ease of use. It comes with its own markup language, **EasyWDL**, specifically designed to be accessible for beginners and children.
 
 ## Key Features
-- **TCP-based Protocol**: Lightweight WDP/1.0 protocol on port 7070.
+- **Dual Protocol Support**: 
+  - **WDP/1.0**: Lightweight protocol on port 7070.
+  - **WDPS**: Secure version with SSL/TLS encryption on port 7071.
 - **EasyWDL**: A markup language with symmetric tags: `(tag) content (tag)`.
-- **Professional Browser**: Custom-built browser supporting images, centering, and name resolution.
-- **Portable**: Built-in script to package the browser into a standalone executable.
-- **VPS Ready**: Easily deployable to any Linux server.
+- **Secure Browser**: Built-in support for `wdps://` URLs with end-to-end encryption.
+- **Portable**: Script included to package the browser into a standalone executable.
+- **VPS Ready**: Deployable to any Linux environment.
 
 ## Quick Start
 
