@@ -21,3 +21,11 @@ dist/
 *.crt
 *.key
 *.pem
+
+# Android
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/build_error.log
+*.apk

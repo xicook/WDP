@@ -1,0 +1,8 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <style name="Theme.WdpBrowser" parent="Theme.MaterialComponents.Light.DarkActionBar">
+        <item name="colorPrimary">#2c3e50</item>
+        <item name="colorPrimaryVariant">#1a252f</item>
+        <item name="colorOnPrimary">#ffffff</item>
+        <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
+    </style>
+</resources>

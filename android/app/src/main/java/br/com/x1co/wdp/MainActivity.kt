@@ -1,0 +1,48 @@
+package br.com.x1co.wdp
+
+import android.os.Bundle
+import android.widget.Button
+import android.widget.EditText
+import android.widget.LinearLayout
+import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+
+class MainActivity : AppCompatActivity() {
+    private lateinit var urlInput: EditText
+    private lateinit var contentContainer: LinearLayout
+    private lateinit var renderer: EasyWdlRenderer
+    private val client = WdpClient()
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+
+        urlInput = findViewById(R.id.urlInput)
+        contentContainer = findViewById(R.id.contentContainer)
+        renderer = EasyWdlRenderer(this, contentContainer)
+
+        findViewById<Button>(R.id.goButton).setOnClickListener {
+            val url = urlInput.text.toString().trim()
+            if (url.isNotEmpty()) {
+                fetchContent(url)
+            }
+        }
+        
+        // Load default content
+        fetchContent("wdp://home")
+    }
+
+    private fun fetchContent(url: String) {
+        client.fetch(url) { result ->
+            runOnUiThread {
+                result.onSuccess { content ->
+                    renderer.render(content)
+                }.onFailure { error ->
+                    val errorMsg = error.toString()
+                    Toast.makeText(this, "Error: $errorMsg", Toast.LENGTH_LONG).show()
+                    renderer.render("(text) Error loading page: $errorMsg (text)")
+                }
+            }
+        }
+    }
+}

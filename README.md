@@ -9,6 +9,7 @@ WDP is a simplified, lightweight alternative to HTTP, designed for speed and eas
 - **EasyWDL**: A markup language with symmetric tags: `(tag) content (tag)`.
 - **Secure Browser**: Built-in support for `wdps://` URLs with end-to-end encryption.
 - **Portable**: Script included to package the browser into a standalone executable.
+- **Native Android App**: Functional WDP/WDPS browser for mobile devices.
 - **VPS Ready**: Deployable to any Linux environment.
 
 ## Quick Start
@@ -24,9 +25,15 @@ sudo apt update && sudo apt install -y python3-tk python3-pil.imagetk python3-re
 python3 wdp_browser.py
 ```
 
-### 3. Build Executable
+### 3. Build Executable (Linux)
 ```bash
 ./build_app.sh
+```
+
+### 4. Build Android App
+```bash
+cd android
+gradle assembleDebug
 ```
 
 ## EasyWDL Syntax Example
